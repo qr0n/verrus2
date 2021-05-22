@@ -1,37 +1,41 @@
 import discord
-
-color = 0xFF6500
-key_features = {
-    'temp' : 'Temperature',
-    'feels_like' : 'Feels Like',
-    'temp_min' : 'Minimum Temperature',
-    'temp_max' : 'Maximum Temperature'
-}
-
-def parse_data(data):
-    del data['humidity']
-    del data['pressure']
-    return data
-
-def weather_message(data, location):
-    location = location.title()
-    message = discord.Embed(
-        title=f'{location} Weather',
-        description=f'Here is the weather in {location}.',
-        color=color
-    )
-    for key in data:
-        message.add_field(
-            name=key_features[key],
-            value=str(data[key]),
-            inline=False
-        )
-    return message
-
-def error_message(location):
-    location = location.title()
-    return discord.Embed(
-        title='Error',
-        description=f'There was an error retrieving weather data for {location}.',
-        color=color
-    )
+from discord.ext import commands
+import wikipedia,os
+from chatbot import Chat, register_call
+prefix = "?"
+bot = commands.Bot(command_prefix = prefix)
+@register_call("whoIs")
+def who_is(query, session_id="general"):
+    try:
+        return wikipedia.summary(query)
+    except Exception:
+        for new_query in wikipedia.search(query):
+            try:
+                return wikipedia.summary(new_query)
+            except Exception:
+                pass
+    return "I don't know about "+query
+template_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"chatbotTemplate","chatbottemplate.template")
+chat=Chat(template_file_path)
+@bot.event
+async def on_ready():
+    print("The bot is ready!")
+@bot.event
+async def on_message(message):
+    result = chat.respond(message.content)
+    if(len(result)<=2048):
+        embed=discord.Embed(title="ChatBot AI", description = result, color = (0xF48D1))
+        await message.channel.send(embed=embed)
+    else:
+        embedList = []
+        n=2048
+        embedList = [result[i:i+n] for i in range(0, len(result), n)]
+        for num, item in enumerate(embedList, start = 1):
+            if(num == 1):
+                embed = discord.Embed(title="ChatBot AI", description = item, color = (0xF48D1))
+                embed.set_footer(text="Page {}".format(num))
+                await message.channel.send(embed = embed)
+            else:
+                embed = discord.Embed(description = item, color = (0xF48D1))
+                embed.set_footer(text = "Page {}".format(num))
+                await message.channel.send(embed = embed)

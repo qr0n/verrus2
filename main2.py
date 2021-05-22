@@ -1,15 +1,6 @@
 import discord
 import discord.ext
 import os
-import contextlib
-import io
-import logging
-import textwrap
-import wikipedia
-os.system("pip install chatbotAI")
-import chatbot
-from chatbot import Chat, register_call
-from traceback import format_exception
 os.system("pip install discord-py-slash-command")
 import discord_slash
 from discord_slash import SlashCommand
@@ -24,18 +15,16 @@ import json
 import pyfiglet
 #import datetime
 import asyncio
-from Pag import Pag
 from asyncio import sleep as s
 #import pywhatkit as what
 #os.system("pip install translator")
 from translate import Translator
 import typing
-#from main2 import main2 as m3
 intents = discord.Intents.default()
 intents.members = True
 #import yes_no_dialo
 
-bot = commands.Bot(command_prefix= "V", case_insensitive=True, intents=intents)#help_command=None,
+bot = commands.Bot(command_prefix= "@", case_insensitive=True, intents=intents)#help_command=None,
 #intents=intents
 
 client = discord.Client()
@@ -68,20 +57,6 @@ web5 = os.environ.get("web5")
 wra = os.environ.get("bubble_wrap")
 #---------------------------------------------------events---------------------------------------------------------------
 
-@register_call("whoIs")
-def who_is(query, session_id="general"):
-    try:
-        return wikipedia.summary(query)
-    except Exception:
-        for new_query in wikipedia.search(query):
-            try:
-                return wikipedia.summary(new_query)
-            except Exception:
-                pass
-    return "I don't know about "+query
-template_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"chatbotTemplate","chatbottemplate.template")
-chat=Chat(template_file_path)
-
 extensions = [
     'cogs.Main_Cog',
    # 'cogs.write_cog',
@@ -95,7 +70,6 @@ if __name__ == '__main__':
 		bot.load_extension(extension)
 
 proggress = os.environ.get("progress")
-
 @bot.event
 async def on_ready():
 	activity = discord.Game(name=f"Vhelp for help! | M4 {proggress}%",
@@ -822,16 +796,15 @@ async def on_slash_command_error(ctx, ex):
   log = bot.get_channel(801530936356503612)
   embed = discord.Embed(title="Slash command error")
   embed.add_field(name="The following exeption is the direct cause of the slash command to fail", value=f"{ex}\n[Slash Docs](https://discord-py-slash-command.readthedocs.io/en/latest/quickstart.html)")
-  #await log.send(embed=embed)
+  await log.send(embed=embed)
   await ctx.send(embed=embed)
   print(ex)
 
 @bot.event
 async def on_command_error(ctx, error):
   log = bot.get_channel(801530936356503612)
-  embed = discord.Embed(title="Command error")
+  embed = discord.Embed(title="Slash command error")
   embed.add_field(name="The following exeption is the direct cause of the slash command to fail", value=f"{error}\n[Docs](https://discordpy.readthedocs.io/en/stable/api.html)")
-  #await ctx.send(embed=embed)
   await ctx.send(embed=embed)
   print(error)
 
@@ -957,7 +930,7 @@ async def timer(ctx, timer: int = None):
     message = await ctx.send(embed=embed)
     while timer > 0: 
       timer -= 1
-      new = discord.Embed(title = "Timer", description=f"{timer} Minutes", color= ctx.author.color, timestamp = ctx.message.created_at)
+      new = discord.Embed(title = "Timer", description=f"{timer}Minutes", color= ctx.author.color, timestamp = ctx.message.created_at)
       await message.edit(embed=new)
       await s(60)
 
@@ -1014,14 +987,6 @@ async def cdis(ctx, arg):
   if arg == True:
     await ctx.send("A is True")
 
-#@bot.command()
-#async def botinfo(ctx):
-  #await ctx.send(application_info())
-
-@bot.command()
-async def m2(ctx, * ,arg):
-  await ctx.send(keep_alive)
-
 @bot.command()
 async def translate(ctx, anguage, *, argument):
   translator= Translator(to_lang=f"{anguage}")
@@ -1029,148 +994,8 @@ async def translate(ctx, anguage, *, argument):
   print(translation) 
   await ctx.send(translation)
 
-@bot.command(pass_context = True)
-async def ai(ctx,*,message):
-    result = chat.respond(message)
-    if(len(result)<=2048):
-        embed=discord.Embed(title="ChatBot AI", description = result, color = (0xF48D1))
-        await ctx.reply(embed=embed)
-    else:
-        embedList = []
-        n=2048
-        embedList = [result[i:i+n] for i in range(0, len(result), n)]
-        for num, item in enumerate(embedList, start = 1):
-            if(num == 1):
-                embed = discord.Embed(title="ChatBot AI", description = item, color = (0xF48D1))
-                embed.set_footer(text="Page {}".format(num))
-                await ctx.reply(embed = embed)
-            else:
-                embed = discord.Embed(description = item, color = (0xF48D1))
-                embed.set_footer(text = "Page {}".format(num))
-                await ctx.reply(embed = embed)
-
-
-@bot.event
-async def on_message(message):
-    result = chat.respond(message.content)
-    if bot.user == message.author:
-      return 
-    if(len(result)<=2048):
-        embed=discord.Embed(title="ChatBot AI", description = result, color = (0xF48D1))
-        await message.channel.send(embed=embed)
-    else:
-        embedList = []
-        n=2048
-        embedList = [result[i:i+n] for i in range(0, len(result), n)]
-        for num, item in enumerate(embedList, start = 1):
-            if(num == 1):
-                embed = discord.Embed(title="ChatBot AI", description = item, color = (0xF48D1))
-                embed.set_footer(text="Page {}".format(num))
-                await message.channel.send(embed = embed)
-            else:
-                embed = discord.Embed(description = item, color = (0xF48D1))
-                embed.set_footer(text = "Page {}".format(num))
-                await message.channel.send(embed = embed)
-
-@bot.command()
-@commands.has_permissions(manage_channels=True)
-async def gdm(ctx, member : discord.Member, name=None, *, Time):
-  tim = Time * 60
-  guild = ctx.guild
-  channel = await guild.create_text_channel(f"{name}")
-  ch = bot.fetch_channel(channel)
-  await ctx.send(f"made {channel}") 
-  await s(tim)
-  await ch.delete()
-  
-@bot.command()
-async def emoji(ctx):
-  guild = ctx.guild
-  await ctx.send(guild.emojis)
-@bot.command(name="eval", aliases=["exec"])
-@commands.is_owner()
-async def _eval(ctx, *, code):
-    code = clean_code(code)
-
-    local_variables = {
-        "discord": discord,
-        "commands": commands,
-        "bot": bot,
-        "ctx": ctx,
-        "channel": ctx.channel,
-        "author": ctx.author,
-        "guild": ctx.guild,
-        "message": ctx.message
-    }
-
-    stdout = io.StringIO()
-
-    try:
-        with contextlib.redirect_stdout(stdout):
-            exec(
-                f"async def func():\n{textwrap.indent(code, '    ')}", local_variables,
-            )
-
-            obj = await local_variables["func"]()
-            result = f"{stdout.getvalue()}\n-- {obj}\n"
-    except Exception as e:
-        result = "".join(format_exception(e, e, e.__traceback__))
-
-    pager = Pag(
-        timeout=100,
-        entries=[result[i: i + 2000] for i in range(0, len(result), 2000)],
-        length=1,
-        prefix="```py\n",
-        suffix="```"
-    )
-
-    a = await pager.start(ctx)
-    await ctx.send(a)
-
-def clean_code(content):
-    if content.startswith("```") and content.endswith("```"):
-        return "\n".join(content.split("\n")[1:])[:-3]
-    else:
-        return content
-
-@tasks.loop(hours=1)
-async def called_once_a_day():
-    message_channel = bot.get_channel(845368382173085756)
-    embed = discord.Embed(title=f"Package Configuration, Getting channel:{message_channel} <a:yes:793883148215779328>")
-    msg = await message_channel.send(embed=embed)
-    print(f"Got channel {message_channel} <a:yes:793883148215779328>")
-    embed2 = discord.Embed(title=f"Package Configuration", description=f"Got channel: {message_channel} <a:yes:793883148215779328>\nUpdating packages")
-    await msg.edit(embed=embed2)
-    os.system("pip install discord")
-    embed3 = discord.Embed(title=f"Package Configuration", description=f"Got channel:{message_channel} <a:yes:793883148215779328>\n Updating Packages <a:yes:793883148215779328>\n ```py\npip install discord```")
-    await msg.edit(embed=embed3)
-    os.system("pip install discord.py")
-    embed4 = discord.Embed(title=f"Package Configuration", description=f"Got channel:{message_channel} <a:yes:793883148215779328>\n Updating Packages\n ```py\npip install discord\n ✔️ done\n\npip install discord-py-slash-command``` ")
-    await msg.edit(embed=embed4)
-    os.system("pip install discord-py-slash-command")
-    embed5 = discord.Embed(title=f"Package Configuration", description=f"Got channel:{message_channel} <a:yes:793883148215779328>\n Updating Packages\n ```py\npip install discord\n ✔️ done\n\npip install discord-py-slash-command\n ✔️ done\n\npip install pyfiglet``` ")
-    await msg.edit(embed=embed5)
-    os.system("pip install pyfiglet")
-    embed7 = discord.Embed(title=f"Package Configuration", description=f"Got channel:{message_channel} <a:yes:793883148215779328>\n Updating Packages\n ```py\npip install discord\n ✔️ done\n\npip install discord-py-slash-command\n ✔️ done\n\npip install pyfiglet\n ✔️ done\n\npip install translate``` ")
-    await msg.edit(embed=embed7) 
-    os.system("pip install translator")
-    embed8 = discord.Embed(title=f"Package Configuration", description=f"Got channel:{message_channel} <a:yes:793883148215779328>\n Updating Packages\n ```py\npip install discord\n ✔️ done\n\npip install discord-py-slash-command\n ✔️ done\n\npip install pyfiglet\n ✔️ done\n\npip install translate\n ✔️ done\n\npip install chatbotAI```")
-    await msg.edit(embed=embed8)
-    os.system("pip install chatbotAI")
-    embed9 = discord.Embed(title=f"Package Configuration", description=f"Got channel:{message_channel} <a:yes:793883148215779328>\n Updating Packages\n ```py\npip install discord\n ✔️ done\n\npip install discord-py-slash-command\n ✔️ done\n\npip install pyfiglet\n ✔️ done\n\npip install translate\n ✔️ done\n\npip install chatbotAI\n ✔️ done```")
-    embed8.set_footer(text="[Package Configuration Updated]")
-    await msg.edit(embed=embed9)
-
-
-@called_once_a_day.before_loop
-async def before():
-    await bot.wait_until_ready()
-    print("Finished waiting")
-called_once_a_day.start()
-
-#m2()
 keep_alive()
-bot.run(os.environ.get('TOKEN'))
+bot.run(os.environ.get('TOKEN2'))
 #botvalue = db["key"]matches = db.prefix("prefix")y
 
 #name="Created account at: ",

@@ -1,0 +1,4 @@
+{% block %}
+    {% client %}(ewubewqnfeiqwudnweuiqednwuiqduw|wyewnfu|edwidew) (?P<query>.*) {% endclient %}
+    {% response %}{% call whoIs: %query %}{% endresponse %}
+{% endblock %}
