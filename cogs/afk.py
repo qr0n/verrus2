@@ -4,6 +4,7 @@ from discord.ext import commands
 import random
 import json
 import time
+import aiohttp
 
 class AFK(commands.Cog):
     '''
@@ -106,6 +107,7 @@ class AFK(commands.Cog):
             await ctx.author.edit(nick=f'[AFK]{ctx.author.display_name}')
         except:
             print(f'I wasnt able to edit [{ctx.message.author}].')
+
 
 def setup(client):
     client.add_cog(AFK(client))

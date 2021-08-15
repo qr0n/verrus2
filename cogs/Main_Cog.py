@@ -69,6 +69,7 @@ class DevCommands(commands.Cog, name='Developer Commands'):
 		base_string += "\n".join([str(cog) for cog in self.bot.extensions])
 		base_string += "\n```"
 		await ctx.send(base_string)
+    
 
 def setup(bot):
 	bot.add_cog(DevCommands(bot))

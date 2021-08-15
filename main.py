@@ -1,10 +1,17 @@
 import discord
+from discord import Client
+import discord_buttons
+from discord_buttons import DiscordButton, Button, ButtonStyle, InteractionType
 import discord.ext
 import os
 import contextlib
 import io
+from pathlib import Path # For paths
+import platform # For stats
 import logging
 import textwrap
+import rsap
+from rsap import RSAP
 import wikipedia
 os.system("pip install chatbotAI")
 import chatbot
@@ -22,24 +29,28 @@ from discord.ext import commands, tasks
 import random
 import json
 import pyfiglet
-#import datetime
+import datetime as dt
 import asyncio
 from Pag import Pag
+import aiohttp
 from asyncio import sleep as s
 #import pywhatkit as what
 #os.system("pip install translator")
 from translate import Translator
 import typing
+#from weather import weather as w
 #from main2 import main2 as m3
 intents = discord.Intents.default()
 intents.members = True
 #import yes_no_dialo
+Vprefixes = ["V", "#V", "@V", "!V", "^V"]
+prefix = ["#", "!", "@", "%", "^"]
 
-bot = commands.Bot(command_prefix= "V", case_insensitive=True, intents=intents)#help_command=None,
+bot = commands.Bot(command_prefix="V", case_insensitive=True, intents=intents, reconnect=True,)#help_command=None,
 #intents=intents
-
+ddb = DiscordButton(bot)
 client = discord.Client()
-
+bo = RSAP(f"{os.environ.get('api')}", bot_name="Verrus", dev_name="Infinity Iron", type="unstable")
 slash = SlashCommand(bot, sync_commands=True)
 guild_ids = [759474157330366506, 781968220482699314]
 
@@ -58,6 +69,7 @@ ema.set_footer()
 embody = discord.Embed(title="Extra Pings", description=":loudspeaker:  VC ping\n:exclamation: Event Ping\n:desktop:  Game Ping", color=0x7289da)
 
 bot.sniped_messages = {}
+bot.author_id = 578789460141932555
 bot.author_id = 578789460141932555
 web = os.environ.get("webhook")
 web2 = os.environ.get("webhook2")
@@ -98,11 +110,11 @@ proggress = os.environ.get("progress")
 
 @bot.event
 async def on_ready():
-	activity = discord.Game(name=f"Vhelp for help! | M4 {proggress}%",
-	                        type=3)
-	await bot.change_presence(status=discord.Status.do_not_disturb,
-	                          activity=activity)
-	print(f'online {bot.user.name}')
+    print(f"-----\nLogged in as: {bot.user.name} : {bot.user.id}\n-----\nMy current prefix is: -\n-----")
+    data = read_json("blacklist")
+    bot.blacklisted_users = data["blacklistedUsers"]
+    await bot.change_presence(activity=discord.Game(name=f"Vhelp for help! | M4 {proggress}%"))
+
 
 @bot.event
 async def on_member_join(member):
@@ -299,7 +311,9 @@ async def minus(ctx, left: int, right: int):
 async def multiply(ctx, left: int, right: int):
 	await ctx.send(left * right)
 
-
+@bot.command()
+async def divide(ctx, left : int, right:int):
+  await ctx.send(left/right)
 
 @bot.command()
 async def guess(ctx):
@@ -470,7 +484,9 @@ async def server_guard(ctx):
 		await webhook.send(f'server guard has now been turned ', username='')
 
 
-
+@bot.command()
+async def ts(ctx):
+  print("ts was used")
 
 @bot.command(aliases=["wbp", "webhookp", "wbping"])
 async def ping(ctx):
@@ -700,13 +716,6 @@ async def setactivity(ctx, *, arg):
 	await bot.change_presence(status=discord.Status.do_not_disturb,
 	                          activity=activity)
 
-@bot.command()
-@commands.has_role("...")
-async def off(ctx):
-  await bot.logout()
-  await ctx.send("place holder")
-
-
 @bot.command(pass_context=True)
 async def meme(ctx):
     embed = discord.Embed(title="Hideaki Meme", description="",color=discord.Colour.red())
@@ -760,14 +769,7 @@ async def send(ctx, *, arg):
   await ctx.send("Sending")
   #what.sendwhatmsg_to_group(f"{grp}", f"{arg}", 00,15)
 
-@slash.slash(guild_ids=guild_ids)
-async def complain(ctx, *, arg):
-  complains = bot.get_channel(838644823110975518)
-  embed1234 = discord.Embed(
-    title="Complaint:",
-    description=f"```{arg}```",
-    color=discord.Color.random())
-  await complains.send(embed=embed1234)
+
 
 @bot.command()
 async def fix(ctx):
@@ -830,41 +832,17 @@ async def on_slash_command_error(ctx, ex):
 async def on_command_error(ctx, error):
   log = bot.get_channel(801530936356503612)
   embed = discord.Embed(title="Command error")
-  embed.add_field(name="The following exeption is the direct cause of the slash command to fail", value=f"{error}\n[Docs](https://discordpy.readthedocs.io/en/stable/api.html)")
+  embed.add_field(name="The following exeption is the direct cause of the command to fail", value=f"{error}\n[Docs](https://discordpy.readthedocs.io/en/stable/api.html)")
   #await ctx.send(embed=embed)
   await ctx.send(embed=embed)
   print(error)
 
 #-----------------------------------------Slash Commands---------------------------------------
 
-@slash.slash(guild_ids=guild_ids)
-async def getenv(ctx, Var):
-  m = os.environ.get(f"{Var}")
-  await ctx.send(content=f"{m}", hidden=True)
 
-@slash.slash(name="premium", guild_ids=guild_ids)
-async def _premium(ctx):
-  if ctx.guild.id in guild_ids:
-    await ctx.send(content="This guild is registered as a preminum guild!", hidden=True)
-  else:
-    await ctx.send(content="This is not a premium guild", hidden=True)
 
-@slash.slash(name="save", guild_ids=guild_ids)
-async def _save(ctx, arg):
-  await ctx.send(content="message saved!", hidden=True)
 
-@slash.slash(guild_ids=guild_ids)
-async def hexe(ctx, *, arg):
-  if arg.startswith("pip uninstall"):
-     arg = None
-  a = os.system(f"{arg}")
-  await ctx.send("yes", hidden=True)
-  if arg == "pip install":
-    await ctx.send("installed package", hidden=True)
-  await ctx.send(f"{a}", hidden=True)
-  print(f"{ctx.author.name}, {arg}")
-
-@slash.slash(guild_ids=guild_ids)
+@bot.command()
 @commands.has_role("Fleet Admiral")
 async def sudo(ctx, member : discord.Member, *, arg):
 	async with aiohttp.ClientSession() as session:
@@ -874,7 +852,7 @@ async def sudo(ctx, member : discord.Member, *, arg):
 		                   username=f"{member.display_name}",
 		                   avatar_url=f"{member.avatar_url}")
 
-@slash.slash(guild_ids=guild_ids)
+@bot.command()
 #@commands.has_role("...")
 async def say(ctx, member : discord.Member, *, arg):
 	async with aiohttp.ClientSession() as session:
@@ -896,15 +874,6 @@ async def pin(ctx, ID):
   message = await ctx.channel.fetch_message(ID)
   await message.pin()
 
-@slash.slash(guild_ids=guild_ids)
-#@commands.has_role("...")
-async def mebot(ctx):
-	async with aiohttp.ClientSession() as session:
-		webhook = Webhook.from_url(f'{web}',
-		                           adapter=AsyncWebhookAdapter(session))
-		await webhook.send(f"temporaily disabled",
-		                   username=f"{ctx.author.display_name}",
-		                   avatar_url=f"{ctx.author.avatar_url}")
 
 @bot.command()
 async def edit(ctx, * , arg):    
@@ -913,13 +882,6 @@ async def edit(ctx, * , arg):
       y.write(f"import main\n{arg}\nmain()")
     await ctx.send("your code will be reviewed")
 
-@slash.slash(guild_ids=guild_ids)
-
-async def change(ctx, *, new_status=None):
-	activity = discord.Game(name=f"{new_status}",
-	                        type=3)
-	await bot.change_presence(status=discord.Status.do_not_disturb,
-	                          activity=activity)
 
 @bot.command()
 async def timerhelp(ctx):
@@ -1029,6 +991,9 @@ async def translate(ctx, anguage, *, argument):
   print(translation) 
   await ctx.send(translation)
 
+
+
+
 @bot.command(pass_context = True)
 async def ai(ctx,*,message):
     result = chat.respond(message)
@@ -1050,27 +1015,6 @@ async def ai(ctx,*,message):
                 await ctx.reply(embed = embed)
 
 
-@bot.event
-async def on_message(message):
-    result = chat.respond(message.content)
-    if bot.user == message.author:
-      return 
-    if(len(result)<=2048):
-        embed=discord.Embed(title="ChatBot AI", description = result, color = (0xF48D1))
-        await message.channel.send(embed=embed)
-    else:
-        embedList = []
-        n=2048
-        embedList = [result[i:i+n] for i in range(0, len(result), n)]
-        for num, item in enumerate(embedList, start = 1):
-            if(num == 1):
-                embed = discord.Embed(title="ChatBot AI", description = item, color = (0xF48D1))
-                embed.set_footer(text="Page {}".format(num))
-                await message.channel.send(embed = embed)
-            else:
-                embed = discord.Embed(description = item, color = (0xF48D1))
-                embed.set_footer(text = "Page {}".format(num))
-                await message.channel.send(embed = embed)
 
 @bot.command()
 @commands.has_permissions(manage_channels=True)
@@ -1100,7 +1044,8 @@ async def _eval(ctx, *, code):
         "channel": ctx.channel,
         "author": ctx.author,
         "guild": ctx.guild,
-        "message": ctx.message
+        "message": ctx.message,
+        "os" : os
     }
 
     stdout = io.StringIO()
@@ -1132,6 +1077,216 @@ def clean_code(content):
         return "\n".join(content.split("\n")[1:])[:-3]
     else:
         return content
+
+@bot.command()
+@commands.is_owner()
+async def off(ctx):
+  embed = discord.Embed(title="Switch", description="Y/N\nps: Vai and other externally connected recources will still be available.", color=ctx.author.color)
+  m = await ctx.send(embed=embed,
+        buttons=[Button(style=ButtonStyle.red, label="Kill"), 
+        Button(style=ButtonStyle.blue, label="Don't Kill")
+        ],
+    )
+
+  res = await ddb.wait_for_button_click(m)
+  await res.respond(
+        type=InteractionType.ChannelMessageWithSource,
+        content=f'{res.button.label} clicked'
+    )
+  if res.button.label == "Don't Kill":
+    await ctx.send("process was canceled")
+    return
+  await ctx.send("Shutting off verrus bot")
+  await bot.logout()
+
+@bot.command()
+async def dif(ctx):
+  difftest = await ctx.send("theo", buttons=[Button(style=ButtonStyle.blue, label="h"), Button(ButtonStyle.blue, label="Don't Kill")])
+
+  b = await ddb.wait_for_button_click(difftest)
+  if b.button.label == "h":
+    await b.respond(
+        type=InteractionType.ChannelMessageWithSource,
+        content=f'{b} was clicked'
+    )
+  else:
+    await ctx.send("h wasnt clicked")
+
+@bot.command()
+async def pingweb(ctx, *, arg: str):
+  await ctx.send("Pinging {}".format(arg))
+  await ping(arg)
+
+cwd = Path(__file__).parents[0]
+cwd = str(cwd)
+print(f"{cwd}\n-----")
+
+
+
+
+bot.version = '0.0.4'
+
+bot.blacklisted_users = []
+
+
+
+@bot.event
+async def on_message(message):
+    #ignore ourselves
+    if message.author.id == bot.user.id:
+        return
+
+    #blacklist system
+    if message.author.id in bot.blacklisted_users:
+        return
+
+    if message.content.lower().startswith("help"):
+        await message.channel.send("Hey! Why don't you run the help command with `Vhelp`")
+
+    await bot.process_commands(message)
+
+@bot.command()
+@commands.is_owner()
+async def blacklist(ctx, user: discord.Member):
+    if ctx.message.author.id == user.id:
+        await ctx.send("Hey, you cannot blacklist yourself!")
+        return
+
+    bot.blacklisted_users.append(user.id)
+    data = read_json("blacklist")
+    data["blacklistedUsers"].append(user.id)
+    write_json(data, "blacklist")
+    await ctx.send(f"Hey, I have blacklisted {user.name} for you.")
+
+@bot.command()
+@commands.is_owner()
+async def unblacklist(ctx, user: discord.Member):
+    bot.blacklisted_users.remove(user.id)
+    data = read_json("blacklist")
+    data["blacklistedUsers"].remove(user.id)
+    write_json(data, "blacklist")
+    await ctx.send(f"Hey, I have unblacklisted {user.name} for you.")
+
+@bot.command()
+async def stats(ctx):
+    """
+    A usefull command that displays bot statistics.
+    """
+    pythonVersion = platform.python_version()
+    dpyVersion = discord.__version__
+    serverCount = len(bot.guilds)
+    memberCount = len(set(bot.get_all_members()))
+
+    embed = discord.Embed(title=f'{bot.user.name} Stats', description='\uFEFF', colour=ctx.author.colour, timestamp=ctx.message.created_at)
+
+    embed.add_field(name='Bot Version:', value=bot.version)
+    embed.add_field(name='Python Version:', value=pythonVersion)
+    embed.add_field(name='Discord.Py Version', value=dpyVersion)
+    embed.add_field(name='Total Guilds:', value=serverCount)
+    embed.add_field(name='Total Users:', value=memberCount)
+    embed.add_field(name='Bot Developers:', value=f"<@{bot.author_id}>")
+
+    embed.set_footer(text=f"Carpe Noctem | {bot.user.name}")
+    embed.set_author(name=bot.user.name, icon_url=bot.user.avatar_url)
+
+    await ctx.send(embed=embed)
+
+def read_json(filename):
+    with open(f"{cwd}/bot_config/{filename}.json", "r") as file:
+        data = json.load(file)
+    return data
+
+def write_json(data, filename):
+    with open(f"{cwd}/bot_config/{filename}.json", "w") as file:
+        json.dump(data, file, indent=4)
+
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def channelr(ctx, flag=None):
+  edit = await ctx.send("Cuerating the most random channel name")
+  words0 = ["maybe", " ", "keep", "alive", "ai", "perhaps", "eeorn", "im", "so", "quirky", "silver", "god", "odd", "awesome", "hi", "bye", "elaborate", "nut", "big", "delicius", "koko", "tree", "palm", "uses", "tree"]
+  words1 = ["maybe", " ", "keep", "alive", "ai", "perhaps", "eeorn", "im", "so", "quirky", "silver", "god", "odd", "awesome", "hi", "bye", "elaborate", "nut", "big", "delicius", "koko", "tree", "palm", "uses", "tree"]
+  words2 = ["maybe", " ", "keep", "alive", "ai", "perhaps", "eeorn", "im", "so", "quirky", "silver", "god", "odd", "awesome", "hi", "bye", "elaborate", "nut", "big", "delicius", "koko", "tree", "palm", "uses", "tree"]
+  prew1 = random.choice(words0)
+  prew2 = random.choice(words1)
+  prew3 = random.choice(words2)
+
+
+
+
+  a = f"{prew1} {prew2} {prew3}"
+  if flag.endswith("--N"):
+    await edit.edit("Generated random words")
+    r = bot.get_channel(ctx.channel.id)
+    await r.edit(reason=None ,name="∥⋆··⋆➻🍁⌜{}⌟".format(a))
+    return
+  elif flag.endswith("$ai"):
+    m = await ctx.send("using AI to generate name")
+    await m.edit(f"{a} were the words selected")
+    ai = bo.ai_response(f"{a}")
+    await m.edit(f"{a} were the words selected to which the bot replied {ai}")
+    a_rep = bot.get_channel(ctx.channel.id)
+    await a_rep.edit(reason=None, name=f"∥⋆··⋆➻🍁⌜{ai}⌟")
+
+@bot.command()
+async def aburn(ctx, *, search_terms : str):
+        """Urban Dictionary search"""
+        search_terms = search_terms.split(" ")
+        search_terms = "+".join(search_terms)
+        search = "http://api.urbandictionary.com/v0/define?term=" + search_terms
+        try:
+            async with aiohttp.get(search) as r:
+                result = await r.json()
+            if result["list"] != []:
+                definition = result['list'][0]['definition']
+                example = result['list'][0]['example']
+                await ctx.send("**Definition:** " + definition + "\n\n" + "**Example:** " + example )
+            else:
+                await ctx.reply("Your search terms gave no results.", mention_author=False)
+        except Exception:
+            await ctx.send("Oh no it appears we ran into a error!")
+run_time_var = []
+def Clear_List():
+  if len(run_time_var) > 3: 
+    for i in run_time_var:
+      run_time_var.remove(i)
+
+@bot.listen('on_message')
+async def wdqudqw(message):
+  if len(run_time_var) > 3: 
+    for i in run_time_var:
+      run_time_var.remove(i)
+  
+  if message.channel.id == 876139985231806468:
+    if message.author.id == 780835623006240809:
+      print("message recived decoding now")
+      print(message.content)
+      if message.content.startswith("name="):
+        print("caught message content")
+        run_time_var.append(message.content[6:])
+        print(run_time_var)
+      elif message.content.startswith("guild_id="):
+        print("caught message content")
+        run_time_var.append(message.content[10:])
+        print(run_time_var)
+      elif message.content.startswith("channel_id="):
+        print("caught message content")
+        run_time_var.appxend(message.content[11:])
+        print(run_time_var)
+      ran = bot.get_channel(838155702350381137)
+      await ran.send(message.content)
+      for i in run_time_var:
+        try:
+          for vars in run_time_var:
+            e = bot.get_channel(vars)
+            print(e)
+            t = bot.get_guild(vars)
+            print(t)
+            a = vars
+            print(a)
+            await e.send(f"message destination {t} attempting to get message {a}")
+        except Exception as E:
+          await ran.send("Oh no an uncaught exception occured {}".format(E))
 
 @tasks.loop(hours=1)
 async def called_once_a_day():
@@ -1168,11 +1323,7 @@ async def before():
     print("Finished waiting")
 called_once_a_day.start()
 
+
 #m2()
 keep_alive()
-bot.run(os.environ.get('TOKEN'))
-#botvalue = db["key"]matches = db.prefix("prefix")y
-
-#name="Created account at: ",
-	  #value=member.created_at.strftime("%a, %d %#B %Y, %I:%M %p UTC"))
-
+bot.run(os.environ.get('T'), bot=True)

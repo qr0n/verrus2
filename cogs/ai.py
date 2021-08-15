@@ -1,19 +1,17 @@
-import discord
-from discord.ext import commands
-import wikipedia,os
-from chatbot import Chat, register_call
-prefix = "?"
-bot = commands.Bot(command_prefix = prefix)
-
-template_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),"chatbotTemplate","chatbottemplate.template")
-chat=Chat(template_file_path)
-
 @bot.event
 async def on_message(message):
+    channeler = bot.get_channel(845684085460697118)
+    if(message.channel.id == 845684085460697118):
+      channeler = bot.get_channel(845684085460697118)
+    else:
+      return
     result = chat.respond(message.content)
+    if bot.user == message.author:
+      return 
     if(len(result)<=2048):
-        embed=discord.Embed(title="ChatBot AI", description = result, color = (0xF48D1))
-        await message.channel.send(embed=embed)
+        embed=discord.Embed(title="ChatBot AI", description = result, color =message.author.color)
+        await channeler.send(embed=embed)
+        await bot.process_commands(message)
     else:
         embedList = []
         n=2048
@@ -22,8 +20,10 @@ async def on_message(message):
             if(num == 1):
                 embed = discord.Embed(title="ChatBot AI", description = item, color = (0xF48D1))
                 embed.set_footer(text="Page {}".format(num))
-                await message.channel.send(embed = embed)
+                await channeler.send(embed = embed)
+                await bot.process_commands(message)
             else:
                 embed = discord.Embed(description = item, color = (0xF48D1))
                 embed.set_footer(text = "Page {}".format(num))
-                await message.channel.send(embed = embed)
+                await channeler.send(embed = embed)
+                await bot.process_commands(message)
